@@ -29,7 +29,7 @@ T readParam(ros::NodeHandle &n, std::string name)
     T ans;
     if (n.getParam(name, ans))
     {
-        ROS_INFO_STREAM("Loaded " << name << ": " << ans);
+        ROS_INFO_STREAM("[vins_estimator] Loaded " << name << ": " << ans);
     }
     else
     {

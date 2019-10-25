@@ -24,7 +24,7 @@ T readParam(ros::NodeHandle &n, std::string name)
     T ans;
     if (n.getParam(name, ans))
     {
-        ROS_INFO_STREAM("Loaded " << name << ": " << ans);
+        ROS_INFO_STREAM("Loaded 2" << name << ": " << ans);
     }
     else
     {
@@ -44,6 +44,7 @@ void readParameters(ros::NodeHandle &n)
         std::cerr << "ERROR: Wrong path to settings" << std::endl;
     }
     std::string VINS_FOLDER_PATH = readParam<std::string>(n, "vins_folder");
+    ROS_INFO_STREAM("VINS_FOLDER_PATH: " << VINS_FOLDER_PATH);
 
     fsSettings["image_topic"] >> IMAGE_TOPIC;
     fsSettings["imu_topic"] >> IMU_TOPIC;
@@ -56,8 +57,10 @@ void readParameters(ros::NodeHandle &n)
     SHOW_TRACK = fsSettings["show_track"];
     EQUALIZE = fsSettings["equalize"];
     FISHEYE = fsSettings["fisheye"];
-    if (FISHEYE == 1)
-        FISHEYE_MASK = VINS_FOLDER_PATH + "config/fisheye_mask.jpg";
+    if (FISHEYE == 1) {
+        FISHEYE_MASK = VINS_FOLDER_PATH + "config/mask.png";
+        std::cout << "Mask path: " << FISHEYE_MASK << std::endl;
+    }
     CAM_NAMES.push_back(config_file);
 
     WINDOW_SIZE = 20;
