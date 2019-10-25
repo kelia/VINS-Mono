@@ -215,7 +215,7 @@ bool Estimator::initialStructure() {
     var = sqrt(var / ((int) all_image_frame.size() - 1));
     //ROS_WARN("IMU variation %f!", var);
     if (var < 0.25) {
-      ROS_INFO("IMU excitation not enouth!");
+      ROS_INFO("IMU excitation of %.2f not enouth!", var);
       //return false;
     }
   }
@@ -392,7 +392,7 @@ bool Estimator::visualInitialAlign() {
 }
 
 bool Estimator::relativePose(Matrix3d& relative_R, Vector3d& relative_T, int& l) {
-  // find previous frame which contians enough correspondance and parallex with newest frame
+  // find previous frame which contains enough correspondence and parallax with newest frame
   for (int i = 0; i < WINDOW_SIZE; i++) {
     vector<pair<Vector3d, Vector3d>> corres;
     corres = f_manager.getCorresponding(i, WINDOW_SIZE);
@@ -404,7 +404,6 @@ bool Estimator::relativePose(Matrix3d& relative_R, Vector3d& relative_T, int& l)
         Vector2d pts_1(corres[j].second(0), corres[j].second(1));
         double parallax = (pts_0 - pts_1).norm();
         sum_parallax = sum_parallax + parallax;
-
       }
       average_parallax = 1.0 * sum_parallax / int(corres.size());
       if (average_parallax * 460 > 30 && m_estimator.solveRelativeRT(corres, relative_R, relative_T)) {
@@ -412,6 +411,9 @@ bool Estimator::relativePose(Matrix3d& relative_R, Vector3d& relative_T, int& l)
         ROS_DEBUG("average_parallax %f choose l %d and newest frame to triangulate the whole structure",
                   average_parallax * 460, l);
         return true;
+      }
+      else {
+        ROS_INFO("average_parallax too small: %.2f", average_parallax);
       }
     }
   }
