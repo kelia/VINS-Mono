@@ -31,24 +31,25 @@ double latest_time;
 Eigen::Vector3d tmp_P;
 Eigen::Quaterniond tmp_Q;
 Eigen::Vector3d tmp_V;
-Eigen::Vector3d tmp_Ba;
-Eigen::Vector3d tmp_Bg;
+Eigen::Vector3d tmp_bias_acc;
+Eigen::Vector3d tmp_bias_gyr;
 Eigen::Vector3d acc_0;
 Eigen::Vector3d gyr_0;
-bool init_feature = 0;
-bool init_imu = 1;
+bool features_initialized = false;
+bool imu_initialized = false;
 double last_imu_t = 0;
 
 void predict(const sensor_msgs::ImuConstPtr& imu_msg) {
   double t = imu_msg->header.stamp.toSec();
-  if (init_imu) {
+  if (!imu_initialized) {
     latest_time = t;
-    init_imu = 0;
+    imu_initialized = true;
     return;
   }
   double dt = t - latest_time;
   latest_time = t;
 
+  // raw measurements
   double dx = imu_msg->linear_acceleration.x;
   double dy = imu_msg->linear_acceleration.y;
   double dz = imu_msg->linear_acceleration.z;
@@ -59,18 +60,26 @@ void predict(const sensor_msgs::ImuConstPtr& imu_msg) {
   double rz = imu_msg->angular_velocity.z;
   Eigen::Vector3d angular_velocity{rx, ry, rz};
 
-  Eigen::Vector3d un_acc_0 = tmp_Q * (acc_0 - tmp_Ba) - estimator.g;
+  // rotate to world frame, subtract bias & gravity
+  Eigen::Vector3d un_acc_0 = tmp_Q * (acc_0 - tmp_bias_acc) - estimator.g;
 
-  Eigen::Vector3d un_gyr = 0.5 * (gyr_0 + angular_velocity) - tmp_Bg;
+  // average with prior on gyro data, subtract gyro bias
+  Eigen::Vector3d un_gyr = 0.5 * (gyr_0 + angular_velocity) - tmp_bias_gyr;
+
+  // propagate attitude
   tmp_Q = tmp_Q * Utility::deltaQ(un_gyr * dt);
 
-  Eigen::Vector3d un_acc_1 = tmp_Q * (linear_acceleration - tmp_Ba) - estimator.g;
+  // use propagated attitude to integrate actual accelerometer measurement
+  Eigen::Vector3d un_acc_1 = tmp_Q * (linear_acceleration - tmp_bias_acc) - estimator.g;
 
+  // average prior acceleration with posterior acceleration
   Eigen::Vector3d un_acc = 0.5 * (un_acc_0 + un_acc_1);
 
+  // update position & velocity
   tmp_P = tmp_P + dt * tmp_V + 0.5 * dt * dt * un_acc;
   tmp_V = tmp_V + dt * un_acc;
 
+  // update prior of accelerometer & gyro
   acc_0 = linear_acceleration;
   gyr_0 = angular_velocity;
 }
@@ -81,15 +90,15 @@ void update() {
   tmp_P = estimator.Ps[WINDOW_SIZE];
   tmp_Q = estimator.Rs[WINDOW_SIZE];
   tmp_V = estimator.Vs[WINDOW_SIZE];
-  tmp_Ba = estimator.Bas[WINDOW_SIZE];
-  tmp_Bg = estimator.Bgs[WINDOW_SIZE];
+  tmp_bias_acc = estimator.Bas[WINDOW_SIZE];
+  tmp_bias_gyr = estimator.Bgs[WINDOW_SIZE];
   acc_0 = estimator.acc_0;
   gyr_0 = estimator.gyr_0;
 
   queue<sensor_msgs::ImuConstPtr> tmp_imu_buf = imu_buf;
-  for (sensor_msgs::ImuConstPtr tmp_imu_msg; !tmp_imu_buf.empty(); tmp_imu_buf.pop())
+  for (sensor_msgs::ImuConstPtr tmp_imu_msg; !tmp_imu_buf.empty(); tmp_imu_buf.pop()) {
     predict(tmp_imu_buf.front());
-
+  }
 }
 
 std::vector<std::pair<std::vector<sensor_msgs::ImuConstPtr>, sensor_msgs::PointCloudConstPtr>>
@@ -146,15 +155,17 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu_msg) {
     predict(imu_msg);
     std_msgs::Header header = imu_msg->header;
     header.frame_id = "world";
-    if (estimator.solver_flag == Estimator::SolverFlag::NON_LINEAR)
+    if (estimator.solver_flag == Estimator::SolverFlag::NON_LINEAR) {
+      ROS_INFO("pubLatestOdometry");
       pubLatestOdometry(tmp_P, tmp_Q, tmp_V, header);
+    }
   }
 }
 
 void feature_callback(const sensor_msgs::PointCloudConstPtr& feature_msg) {
-  if (!init_feature) {
+  if (!features_initialized) {
     //skip the first detected feature, which doesn't contain optical flow speed
-    init_feature = 1;
+    features_initialized = true;
     return;
   }
   mutex_buf.lock();
