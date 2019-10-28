@@ -109,15 +109,20 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
                              const std_msgs::Header& header) {
   ROS_DEBUG("new image coming ------------------------------------------");
   ROS_DEBUG("Adding feature points %lu", image.size());
-  if (f_manager.addFeatureCheckParallax(frame_count, image, td))
+  TicToc t_process_image;
+  TicToc t_feature_extraction;
+  if (f_manager.addFeatureCheckParallax(frame_count, image, td)) {
     marginalization_flag = MARGIN_OLD;
-  else
+  } else {
     marginalization_flag = MARGIN_SECOND_NEW;
+  }
+  ROS_INFO("feature extraction took: %fms", t_feature_extraction.toc());
+
 
   ROS_DEBUG("this frame is--------------------%s", marginalization_flag ? "reject" : "accept");
   ROS_DEBUG("%s", marginalization_flag ? "Non-keyframe" : "Keyframe");
   ROS_INFO("Solving %d", frame_count);
-  ROS_INFO("number of feature: %d", f_manager.getFeatureCount());
+  ROS_INFO("number of features: %d", f_manager.getFeatureCount());
   Headers[frame_count] = header;
 
   ImageFrame imageframe(image, header.stamp.toSec());
@@ -165,7 +170,7 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
   } else {
     TicToc t_solve;
     solveOdometry();
-    ROS_DEBUG("solver costs: %fms", t_solve.toc());
+    ROS_INFO("solver took: %fms", t_solve.toc());
 
     if (failureDetection()) {
       ROS_WARN("failure detection!");
@@ -179,17 +184,19 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
     TicToc t_margin;
     slideWindow();
     f_manager.removeFailures();
-    ROS_DEBUG("marginalization costs: %fms", t_margin.toc());
+    ROS_INFO("marginalization costs: %fms", t_margin.toc());
     // prepare output of VINS
     key_poses.clear();
-    for (int i = 0; i <= WINDOW_SIZE; i++)
+    for (int i = 0; i <= WINDOW_SIZE; i++) {
       key_poses.push_back(Ps[i]);
+    }
 
     last_R = Rs[WINDOW_SIZE];
     last_P = Ps[WINDOW_SIZE];
     last_R0 = Rs[0];
     last_P0 = Ps[0];
   }
+  ROS_INFO("image processing took: %fms", t_process_image.toc());
 }
 
 bool Estimator::initialStructure() {
@@ -411,8 +418,7 @@ bool Estimator::relativePose(Matrix3d& relative_R, Vector3d& relative_T, int& l)
         ROS_DEBUG("average_parallax %f choose l %d and newest frame to triangulate the whole structure",
                   average_parallax * 460, l);
         return true;
-      }
-      else {
+      } else {
         ROS_INFO("average_parallax too small: %.2f", average_parallax);
       }
     }
