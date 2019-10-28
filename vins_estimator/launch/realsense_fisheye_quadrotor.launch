@@ -10,7 +10,7 @@
     <node name="vins_estimator" pkg="vins_estimator" type="vins_estimator" output="screen">
        <param name="config_file" type="string" value="$(arg config_path)" />
        <param name="vins_folder" type="string" value="$(arg vins_path)" />
-       <remap from="/vins_estimator/imu_propagate" to="/cuckoo/state_estimate"/>
+       <!-- remap from="/vins_estimator/imu_propagate" to="/cuckoo/state_estimate"/ -->
        <!-- remap from="/vins_estimator/odometry" to="/cuckoo/state_estimate"/ -->
     </node>
 
