@@ -203,6 +203,7 @@ void relocalization_callback(const sensor_msgs::PointCloudConstPtr& points_msg) 
 // thread: visual-inertial odometry
 void process() {
   while (true) {
+    TicToc t_vio_thread;
     // imu measurements are sorted in between frames and organized in std::pair
     std::vector<std::pair<std::vector<sensor_msgs::ImuConstPtr>, sensor_msgs::PointCloudConstPtr>> measurements;
     std::unique_lock<std::mutex> unique_buffer_lock(mutex_buf);
@@ -328,6 +329,8 @@ void process() {
     }
     mutex_state.unlock();
     mutex_buf.unlock();
+    double full_timing = t_vio_thread.toc();
+    ROS_INFO("full vio thread took: %.2 ms.", full_timing);
   }
 }
 

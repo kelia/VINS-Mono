@@ -70,7 +70,7 @@ void printStatistics(const Estimator& estimator, double t) {
   ROS_DEBUG_STREAM("orientation: " << estimator.Vs[WINDOW_SIZE].transpose());
   for (int i = 0; i < NUM_OF_CAM; i++) {
     //ROS_DEBUG("calibration result for camera %d", i);
-    ROS_DEBUG_STREAM("extirnsic tic: " << estimator.tic[i].transpose());
+    ROS_DEBUG_STREAM("extrinsic tic: " << estimator.tic[i].transpose());
     ROS_DEBUG_STREAM("extrinsic ric: " << Utility::R2ypr(estimator.ric[i]).transpose());
     if (ESTIMATE_EXTRINSIC) {
       cv::FileStorage fs(EX_CALIB_RESULT_PATH, cv::FileStorage::WRITE);
@@ -96,8 +96,9 @@ void printStatistics(const Estimator& estimator, double t) {
   sum_of_path += (estimator.Ps[WINDOW_SIZE] - last_path).norm();
   last_path = estimator.Ps[WINDOW_SIZE];
   ROS_DEBUG("sum of path %f", sum_of_path);
-  if (ESTIMATE_TD)
+  if (ESTIMATE_TD) {
     ROS_INFO("td %f", estimator.td);
+  }
 }
 
 void pubOdometry(const Estimator& estimator, const std_msgs::Header& header) {
