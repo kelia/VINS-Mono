@@ -116,13 +116,13 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
   } else {
     marginalization_flag = MARGIN_SECOND_NEW;
   }
-  ROS_INFO("feature extraction took: %fms", t_feature_extraction.toc());
+  //ROS_INFO("feature extraction took: %fms", t_feature_extraction.toc());
 
 
   ROS_DEBUG("this frame is--------------------%s", marginalization_flag ? "reject" : "accept");
   ROS_DEBUG("%s", marginalization_flag ? "Non-keyframe" : "Keyframe");
-  ROS_INFO("Solving %d", frame_count);
-  ROS_INFO("number of features: %d", f_manager.getFeatureCount());
+  //ROS_INFO("Solving %d", frame_count);
+  //ROS_INFO("number of features: %d", f_manager.getFeatureCount());
   Headers[frame_count] = header;
 
   ImageFrame imageframe(image, header.stamp.toSec());
@@ -170,7 +170,7 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
   } else {
     TicToc t_solve;
     solveOdometry();
-    ROS_INFO("solver took: %fms", t_solve.toc());
+    //ROS_INFO("solver took: %fms", t_solve.toc());
 
     if (failureDetection()) {
       ROS_WARN("failure detection!");
@@ -184,7 +184,7 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
     TicToc t_margin;
     slideWindow();
     f_manager.removeFailures();
-    ROS_INFO("marginalization costs: %fms", t_margin.toc());
+    //ROS_INFO("marginalization took: %fms", t_margin.toc());
     // prepare output of VINS
     key_poses.clear();
     for (int i = 0; i <= WINDOW_SIZE; i++) {
