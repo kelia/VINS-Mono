@@ -599,7 +599,7 @@ bool Estimator::failureDetection() {
   Matrix3d delta_R = tmp_R.transpose() * last_R;
   Quaterniond delta_Q(delta_R);
   double delta_angle;
-  delta_angle = acos(delta_Q.w()) * 2.0 / 3.14 * 180.0;
+  delta_angle = acos(delta_Q.w()) * 2.0 / M_PI * 180.0;
   if (delta_angle > 50) {
     ROS_INFO(" big delta_angle ");
     //return true;
