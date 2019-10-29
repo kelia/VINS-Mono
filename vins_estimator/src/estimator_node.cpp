@@ -156,7 +156,7 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu_msg) {
     std_msgs::Header header = imu_msg->header;
     header.frame_id = "world";
     if (estimator.solver_flag == Estimator::SolverFlag::NON_LINEAR) {
-      ROS_INFO("pubLatestOdometry");
+//      ROS_INFO("pubLatestOdometry");
       pubLatestOdometry(tmp_P, tmp_Q, tmp_V, header);
     }
   }
@@ -168,6 +168,7 @@ void feature_callback(const sensor_msgs::PointCloudConstPtr& feature_msg) {
     features_initialized = true;
     return;
   }
+  // try out: only push every second message
   mutex_buf.lock();
   feature_buf.push(feature_msg);
   mutex_buf.unlock();
@@ -330,7 +331,7 @@ void process() {
     mutex_state.unlock();
     mutex_buf.unlock();
     double full_timing = t_vio_thread.toc();
-    ROS_INFO("full vio thread took: %.2 ms.", full_timing);
+    ROS_INFO("full vio thread took: %.2f ms.", full_timing);
   }
 }
 
