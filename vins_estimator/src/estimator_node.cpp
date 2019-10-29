@@ -311,6 +311,8 @@ void process() {
       std_msgs::Header header = img_msg->header;
       header.frame_id = "world";
 
+
+      TicToc t_publish;
       pubOdometry(estimator, header);
       pubKeyPoses(estimator, header);
       pubCameraPose(estimator, header);
@@ -320,13 +322,18 @@ void process() {
       if (relo_msg != NULL) {
         pubRelocalization(estimator);
       }
+      double publish_timing = t_publish.toc();
+      ROS_INFO("publish took: %.2f ms.", publish_timing);
       //ROS_ERROR("end: %f, at %f", img_msg->header.stamp.toSec(), ros::Time::now().toSec());
     }
     mutex_estimator.unlock();
     mutex_buf.lock();
     mutex_state.lock();
     if (estimator.solver_flag == Estimator::SolverFlag::NON_LINEAR) {
+      TicToc t_update;
       update();
+      double update_timing = t_update.toc();
+      ROS_INFO("update took: %.2f ms.", update_timing);
     }
     mutex_state.unlock();
     mutex_buf.unlock();
