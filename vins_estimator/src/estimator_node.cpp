@@ -203,20 +203,25 @@ void relocalization_callback(const sensor_msgs::PointCloudConstPtr& points_msg) 
 // thread: visual-inertial odometry
 void process() {
   while (true) {
+    // imu measurements are sorted in between frames and organized in std::pair
     std::vector<std::pair<std::vector<sensor_msgs::ImuConstPtr>, sensor_msgs::PointCloudConstPtr>> measurements;
-    std::unique_lock<std::mutex> lk(mutex_buf);
-    cond_var.wait(lk, [&] {
+    std::unique_lock<std::mutex> unique_buffer_lock(mutex_buf);
+    cond_var.wait(unique_buffer_lock, [&] {
       return (measurements = getMeasurements()).size() != 0;
     });
-    lk.unlock();
+    unique_buffer_lock.unlock();
     mutex_estimator.lock();
+    // iterate over measurements (each measurement contains multiple IMU measurements and one image)
     for (auto& measurement : measurements) {
       auto img_msg = measurement.second;
       double dx = 0, dy = 0, dz = 0, rx = 0, ry = 0, rz = 0;
+      // iterate over IMU messages
       for (auto& imu_msg : measurement.first) {
         double t = imu_msg->header.stamp.toSec();
         double img_t = img_msg->header.stamp.toSec() + estimator.td;
+
         if (t <= img_t) {
+          // IMU message is older than image
           if (current_time < 0)
             current_time = t;
           double dt = t - current_time;
@@ -232,6 +237,7 @@ void process() {
           //printf("imu: dt:%f a: %f %f %f w: %f %f %f\n",dt, dx, dy, dz, rx, ry, rz);
 
         } else {
+          // IMU message is younger than image
           double dt_1 = img_t - current_time;
           double dt_2 = t - img_t;
           current_time = img_t;
