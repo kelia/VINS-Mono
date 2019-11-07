@@ -116,6 +116,7 @@ getMeasurements() {
     }
 
     if (!(imu_buf.front()->header.stamp.toSec() < feature_buf.front()->header.stamp.toSec() + estimator.td)) {
+      // throw away image, since image is older than oldest IMU message
       ROS_WARN("throw img, only should happen at the beginning");
       feature_buf.pop();
       continue;
@@ -156,7 +157,6 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu_msg) {
     std_msgs::Header header = imu_msg->header;
     header.frame_id = "world";
     if (estimator.solver_flag == Estimator::SolverFlag::NON_LINEAR) {
-//      ROS_INFO("pubLatestOdometry");
       pubLatestOdometry(tmp_P, tmp_Q, tmp_V, header);
     }
   }
@@ -213,8 +213,11 @@ void process() {
     });
     unique_buffer_lock.unlock();
     mutex_estimator.lock();
+    double get_data_timing = t_vio_thread.toc();
+//    ROS_INFO("get_data_timing took: %.2f ms.", get_data_timing);
     // iterate over measurements (each measurement contains multiple IMU measurements and one image)
     for (auto& measurement : measurements) {
+      TicToc timing_img_msg;
       auto img_msg = measurement.second;
       double dx = 0, dy = 0, dz = 0, rx = 0, ry = 0, rz = 0;
       // iterate over IMU messages
@@ -258,6 +261,8 @@ void process() {
           //printf("dimu: dt:%f a: %f %f %f w: %f %f %f\n",dt_1, dx, dy, dz, rx, ry, rz);
         }
       }
+      double imu_stuff_timing = timing_img_msg.toc();
+//      ROS_INFO("imu_stuff_timing took: %.2f ms.", imu_stuff_timing);
       // set relocalization frame
       sensor_msgs::PointCloudConstPtr relo_msg = NULL;
       while (!relo_buf.empty()) {
@@ -307,6 +312,7 @@ void process() {
       estimator.processImage(image, img_msg->header);
 
       double whole_t = t_s.toc();
+//      ROS_INFO("whole_t took: %.2f ms.", whole_t);
       printStatistics(estimator, whole_t);
       std_msgs::Header header = img_msg->header;
       header.frame_id = "world";
@@ -323,7 +329,7 @@ void process() {
         pubRelocalization(estimator);
       }
       double publish_timing = t_publish.toc();
-      ROS_INFO("publish took: %.2f ms.", publish_timing);
+//      ROS_INFO("publish took: %.2f ms.", publish_timing);
       //ROS_ERROR("end: %f, at %f", img_msg->header.stamp.toSec(), ros::Time::now().toSec());
     }
     mutex_estimator.unlock();
@@ -333,12 +339,12 @@ void process() {
       TicToc t_update;
       update();
       double update_timing = t_update.toc();
-      ROS_INFO("update took: %.2f ms.", update_timing);
+//      ROS_INFO("update took: %.2f ms.", update_timing);
     }
     mutex_state.unlock();
     mutex_buf.unlock();
     double full_timing = t_vio_thread.toc();
-    ROS_INFO("full vio thread took: %.2f ms.", full_timing);
+//    ROS_INFO("full vio thread took: %.2f ms.", full_timing);
   }
 }
 

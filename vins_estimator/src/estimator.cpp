@@ -196,7 +196,7 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
     last_R0 = Rs[0];
     last_P0 = Ps[0];
   }
-  ROS_INFO("image processing took: %fms", t_process_image.toc());
+//  ROS_INFO("image processing took: %fms", t_process_image.toc());
 }
 
 bool Estimator::initialStructure() {
