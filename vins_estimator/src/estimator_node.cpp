@@ -35,7 +35,8 @@ Eigen::Vector3d tmp_bias_acc;
 Eigen::Vector3d tmp_bias_gyr;
 Eigen::Vector3d acc_0;
 Eigen::Vector3d gyr_0;
-Eigen::Vector3d latest_g(0,0,-9.805); // hack to make it work at the first inizialization
+Eigen::Vector3d un_gyr; // Gyro measurements cleaned
+Eigen::Vector3d latest_g(0,0,9.805); // hack to make it work at the first inizialization
 bool features_initialized = false;
 bool imu_initialized = false;
 double last_imu_t = 0;
@@ -73,7 +74,7 @@ void predict(const sensor_msgs::ImuConstPtr& imu_msg) {
   Eigen::Vector3d un_acc_0 = tmp_Q * (acc_0 - tmp_bias_acc) - current_g;
 
   // average with prior on gyro data, subtract gyro bias
-  Eigen::Vector3d un_gyr = 0.5 * (gyr_0 + angular_velocity) - tmp_bias_gyr;
+  un_gyr = 0.5 * (gyr_0 + angular_velocity) - tmp_bias_gyr;
 
   // propagate attitude
   tmp_Q = tmp_Q * Utility::deltaQ(un_gyr * dt);
@@ -166,7 +167,7 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu_msg) {
     std_msgs::Header header = imu_msg->header;
     header.frame_id = "world";
     // Always publish odometry from IMU (in sensors we trust!)
-    pubLatestOdometry(tmp_P, tmp_Q, tmp_V, header);
+    pubLatestOdometry(tmp_P, tmp_Q, tmp_V, un_gyr, header);
   }
 }
 
