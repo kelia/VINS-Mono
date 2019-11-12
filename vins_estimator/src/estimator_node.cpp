@@ -35,6 +35,7 @@ Eigen::Vector3d tmp_bias_acc;
 Eigen::Vector3d tmp_bias_gyr;
 Eigen::Vector3d acc_0;
 Eigen::Vector3d gyr_0;
+Eigen::Vector3d latest_g(0,0,-9.805); // hack to make it work at the first inizialization
 bool features_initialized = false;
 bool imu_initialized = false;
 double last_imu_t = 0;
@@ -60,8 +61,16 @@ void predict(const sensor_msgs::ImuConstPtr& imu_msg) {
   double rz = imu_msg->angular_velocity.z;
   Eigen::Vector3d angular_velocity{rx, ry, rz};
 
+  // Use the lastet available g
+  Eigen::Vector3d current_g;
+  if (estimator.solver_flag == Estimator::SolverFlag::NON_LINEAR) {
+	  current_g = estimator.g;
+  } else {
+	  current_g = latest_g;
+  }
+
   // rotate to world frame, subtract bias & gravity
-  Eigen::Vector3d un_acc_0 = tmp_Q * (acc_0 - tmp_bias_acc) - estimator.g;
+  Eigen::Vector3d un_acc_0 = tmp_Q * (acc_0 - tmp_bias_acc) - current_g;
 
   // average with prior on gyro data, subtract gyro bias
   Eigen::Vector3d un_gyr = 0.5 * (gyr_0 + angular_velocity) - tmp_bias_gyr;
@@ -70,7 +79,7 @@ void predict(const sensor_msgs::ImuConstPtr& imu_msg) {
   tmp_Q = tmp_Q * Utility::deltaQ(un_gyr * dt);
 
   // use propagated attitude to integrate actual accelerometer measurement
-  Eigen::Vector3d un_acc_1 = tmp_Q * (linear_acceleration - tmp_bias_acc) - estimator.g;
+  Eigen::Vector3d un_acc_1 = tmp_Q * (linear_acceleration - tmp_bias_acc) - current_g;
 
   // average prior acceleration with posterior acceleration
   Eigen::Vector3d un_acc = 0.5 * (un_acc_0 + un_acc_1);
@@ -156,9 +165,8 @@ void imu_callback(const sensor_msgs::ImuConstPtr& imu_msg) {
     predict(imu_msg);
     std_msgs::Header header = imu_msg->header;
     header.frame_id = "world";
-    if (estimator.solver_flag == Estimator::SolverFlag::NON_LINEAR) {
-      pubLatestOdometry(tmp_P, tmp_Q, tmp_V, header);
-    }
+    // Always publish odometry from IMU (in sensors we trust!)
+    pubLatestOdometry(tmp_P, tmp_Q, tmp_V, header);
   }
 }
 
@@ -177,6 +185,8 @@ void feature_callback(const sensor_msgs::PointCloudConstPtr& feature_msg) {
 
 void restart_callback(const std_msgs::BoolConstPtr& restart_msg) {
   if (restart_msg->data == true) {
+    // Save the latest g
+    latest_g = estimator.g;
     ROS_WARN("restart the estimator!");
     mutex_buf.lock();
     while (!feature_buf.empty())
