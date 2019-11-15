@@ -9,6 +9,7 @@ ros::Publisher pub_key_poses;
 ros::Publisher pub_relo_relative_pose;
 ros::Publisher pub_camera_pose;
 ros::Publisher pub_camera_pose_visual;
+ros::Publisher pub_success_init;
 nav_msgs::Path path, relo_path;
 
 ros::Publisher pub_keyframe_pose;
@@ -34,12 +35,18 @@ void registerPub(ros::NodeHandle& n) {
   pub_keyframe_point = n.advertise<sensor_msgs::PointCloud>("keyframe_point", 1000);
   pub_extrinsic = n.advertise<nav_msgs::Odometry>("extrinsic", 1000);
   pub_relo_relative_pose = n.advertise<nav_msgs::Odometry>("relo_relative_pose", 1000);
+  pub_success_init = n.advertise<std_msgs::Empty>("vio_success_init", 1);
 
   cameraposevisual.setScale(1);
   cameraposevisual.setLineWidth(0.05);
   keyframebasevisual.setScale(0.1);
   keyframebasevisual.setLineWidth(0.01);
 }
+
+void comunicateSuccessInit(void) {
+  pub_success_init.publish(std_msgs::Empty());
+}
+
 
 void pubLatestOdometry(const Eigen::Vector3d& P, const Eigen::Quaterniond& Q, const Eigen::Vector3d& V,
 		       const Eigen::Vector3d& W, const std_msgs::Header& header) {

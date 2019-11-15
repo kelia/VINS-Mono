@@ -1,4 +1,5 @@
 #include "estimator.h"
+#include "utility/visualization.h"
 
 Estimator::Estimator() : f_manager{Rs} {
   ROS_INFO("init begins");
@@ -158,6 +159,7 @@ void Estimator::processImage(const map<int, vector<pair<int, Eigen::Matrix<doubl
         slideWindow();
         f_manager.removeFailures();
         ROS_INFO("Initialization finish!");
+	comunicateSuccessInit();
         last_R = Rs[WINDOW_SIZE];
         last_P = Ps[WINDOW_SIZE];
         last_R0 = Rs[0];
