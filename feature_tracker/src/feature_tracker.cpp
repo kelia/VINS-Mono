@@ -63,7 +63,7 @@ void FeatureTracker::setMask()
             forw_pts.push_back(it.second.first);
             ids.push_back(it.second.second);
             track_cnt.push_back(it.first);
-            cv::circle(mask, it.second.first, MIN_DIST, 0, -1);
+            cv::circle(mask, it.second.first, MIN_DIST, 0, -1); // Do not consider other points if too close
         }
     }
 }
@@ -109,7 +109,7 @@ void FeatureTracker::readImage(const cv::Mat &_img, double _cur_time)
     {
         TicToc t_o;
         vector<uchar> status;
-        vector<float> err;
+        vector<float> err; // Error in optical flow.
         cv::calcOpticalFlowPyrLK(cur_img, forw_img, cur_pts, forw_pts, status, err, cv::Size(21, 21), 3);
 
         for (int i = 0; i < int(forw_pts.size()); i++)

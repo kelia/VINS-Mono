@@ -8,6 +8,7 @@ int MAX_CNT;
 int MIN_DIST;
 int WINDOW_SIZE;
 int FREQ;
+int BKP_FREQ;
 double F_THRESHOLD;
 int SHOW_TRACK;
 int STEREO_TRACK;
@@ -53,6 +54,7 @@ void readParameters(ros::NodeHandle &n)
     ROW = fsSettings["image_height"];
     COL = fsSettings["image_width"];
     FREQ = fsSettings["freq"];
+    BKP_FREQ = fsSettings["freq"];
     F_THRESHOLD = fsSettings["F_threshold"];
     SHOW_TRACK = fsSettings["show_track"];
     EQUALIZE = fsSettings["equalize"];
@@ -68,8 +70,10 @@ void readParameters(ros::NodeHandle &n)
     FOCAL_LENGTH = 460;
     PUB_THIS_FRAME = false;
 
-    if (FREQ == 0)
+    if (FREQ == 0) {
         FREQ = 100;
+        BKP_FREQ = 100;
+    }
 
     fsSettings.release();
 

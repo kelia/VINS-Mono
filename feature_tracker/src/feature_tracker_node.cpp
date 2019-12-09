@@ -4,6 +4,7 @@
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/Imu.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/Empty.h>
 #include <cv_bridge/cv_bridge.h>
 #include <message_filters/subscriber.h>
 
@@ -24,6 +25,20 @@ int pub_count = 1;
 bool first_image_flag = true;
 double last_image_time = 0;
 bool init_pub = 0;
+
+void RestartCallback(const std_msgs::BoolConstPtr& restart_msg) {
+  if (restart_msg->data == true) {
+  FREQ = 3;
+  ROS_INFO("Decreased tracker update freq to 3");
+  }
+}
+
+void vioInitCallback(const std_msgs::Empty::ConstPtr& msg) {
+  FREQ = BKP_FREQ;
+  ROS_INFO("put tracker frequence back to config");
+}
+
+
 
 void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
 {
@@ -119,6 +134,7 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
         sensor_msgs::ChannelFloat32 v_of_point;
         sensor_msgs::ChannelFloat32 velocity_x_of_point;
         sensor_msgs::ChannelFloat32 velocity_y_of_point;
+        sensor_msgs::ChannelFloat32 track_count_of_point;
 
         feature_points->header = img_msg->header;
         feature_points->header.frame_id = "world";
@@ -130,6 +146,8 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
             auto &cur_pts = trackerData[i].cur_pts;
             auto &ids = trackerData[i].ids;
             auto &pts_velocity = trackerData[i].pts_velocity;
+            auto &track_count = trackerData[i].track_cnt;
+
             for (unsigned int j = 0; j < ids.size(); j++)
             {
                 if (trackerData[i].track_cnt[j] > 1)
@@ -147,6 +165,7 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
                     v_of_point.values.push_back(cur_pts[j].y);
                     velocity_x_of_point.values.push_back(pts_velocity[j].x);
                     velocity_y_of_point.values.push_back(pts_velocity[j].y);
+		    track_count_of_point.values.push_back(track_count[j]);
                 }
             }
         }
@@ -155,6 +174,7 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
         feature_points->channels.push_back(v_of_point);
         feature_points->channels.push_back(velocity_x_of_point);
         feature_points->channels.push_back(velocity_y_of_point);
+        feature_points->channels.push_back(track_count_of_point);
         ROS_DEBUG("publish %f, at %f", feature_points->header.stamp.toSec(), ros::Time::now().toSec());
         // skip the first image; since no optical speed on frist image
         if (!init_pub)
@@ -229,6 +249,8 @@ int main(int argc, char **argv)
     }
 
     ros::Subscriber sub_img = n.subscribe(IMAGE_TOPIC, 100, img_callback);
+    ros::Subscriber vio_init_sub = n.subscribe("/vins_estimator/vio_success_init", 1, vioInitCallback);
+    ros::Subscriber reset_sub = n.subscribe("/feature_tracker/restart", 1,  RestartCallback);
 
     pub_img = n.advertise<sensor_msgs::PointCloud>("feature", 1000);
     pub_match = n.advertise<sensor_msgs::Image>("feature_img",1000);
