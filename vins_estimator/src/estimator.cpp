@@ -224,7 +224,7 @@ bool Estimator::initialStructure() {
     var = sqrt(var / ((int) all_image_frame.size() - 1));
     //ROS_WARN("IMU variation %f!", var);
     if (var < 0.25) {
-      ROS_INFO("IMU excitation of %.2f not enouth!", var);
+      ROS_INFO_THROTTLE(10.0, "IMU excitation of %.2f not enouth!", var);
       //return false;
     }
   }
@@ -249,7 +249,7 @@ bool Estimator::initialStructure() {
   Vector3d relative_T;
   int l;
   if (!relativePose(relative_R, relative_T, l)) {
-    ROS_INFO("Not enough features or parallax; Move device around");
+    ROS_INFO_THROTTLE(10.0, "Not enough features or parallax; Move device around");
     return false;
   }
   GlobalSFM sfm;
@@ -421,7 +421,7 @@ bool Estimator::relativePose(Matrix3d& relative_R, Vector3d& relative_T, int& l)
                   average_parallax * 460, l);
         return true;
       } else {
-        ROS_INFO("average_parallax too small: %.2f", average_parallax);
+        ROS_INFO_THROTTLE(10.0, "average_parallax too small: %.2f", average_parallax);
       }
     }
   }
