@@ -53,7 +53,7 @@ void readParameters(ros::NodeHandle &n)
     MIN_DIST = fsSettings["min_dist"];
     ROW = fsSettings["image_height"];
     COL = fsSettings["image_width"];
-    FREQ = fsSettings["freq"];
+    FREQ = 3;
     BKP_FREQ = fsSettings["freq"];
     F_THRESHOLD = fsSettings["F_threshold"];
     SHOW_TRACK = fsSettings["show_track"];
@@ -70,7 +70,7 @@ void readParameters(ros::NodeHandle &n)
     FOCAL_LENGTH = 460;
     PUB_THIS_FRAME = false;
 
-    if (FREQ == 0) {
+    if (BKP_FREQ == 0) {
         FREQ = 100;
         BKP_FREQ = 100;
     }

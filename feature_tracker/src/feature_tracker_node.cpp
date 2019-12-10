@@ -26,15 +26,15 @@ bool first_image_flag = true;
 double last_image_time = 0;
 bool init_pub = 0;
 
-void RestartCallback(const std_msgs::BoolConstPtr& restart_msg) {
-  if (restart_msg->data == true) {
+void RestartCallback(const std_msgs::Empty::ConstPtr& msg) {
   FREQ = 3;
+  pub_count = 0;
   ROS_INFO("Decreased tracker update freq to 3");
-  }
 }
 
 void vioInitCallback(const std_msgs::Empty::ConstPtr& msg) {
   FREQ = BKP_FREQ;
+  pub_count = 0;
   ROS_INFO("put tracker frequence back to config");
 }
 
@@ -220,7 +220,7 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
             pub_match.publish(ptr->toImageMsg());
         }
     }
-    ROS_INFO("whole feature tracker processing costs: %f.1ms.", t_r.toc());
+    //ROS_INFO("whole feature tracker processing costs: %f.1ms.", t_r.toc());
 }
 
 int main(int argc, char **argv)
@@ -250,7 +250,7 @@ int main(int argc, char **argv)
 
     ros::Subscriber sub_img = n.subscribe(IMAGE_TOPIC, 100, img_callback);
     ros::Subscriber vio_init_sub = n.subscribe("/vins_estimator/vio_success_init", 1, vioInitCallback);
-    ros::Subscriber reset_sub = n.subscribe("/feature_tracker/restart", 1,  RestartCallback);
+    ros::Subscriber reset_sub = n.subscribe("/success_reset", 1,  RestartCallback);
 
     pub_img = n.advertise<sensor_msgs::PointCloud>("feature", 1000);
     pub_match = n.advertise<sensor_msgs::Image>("feature_img",1000);
