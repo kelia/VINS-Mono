@@ -8,18 +8,18 @@ output_path: "/home/elia/vinsmono_output/"
 #camera calibration 
 model_type: PINHOLE
 camera_name: camera
-image_width: 320
-image_height: 240
+image_width: 424
+image_height: 400
 distortion_parameters:
-   k1: 0.0
-   k2: 0.0
-   p1: 0.0
-   p2: 0.0
+   k1: 0.0 # -0.19745014611866865
+   k2: 0.0 # 0.0239638938451904
+   p1: 0.0 # 0.0018063222060033732
+   p2: 0.0 # -0.0027940453366193684
 projection_parameters:
-   fx: 171.74818376790037
-   fy: 171.74818376790037
-   cx: 160
-   cy: 120
+   fx: 147.50793864308702
+   fy: 147.50793864308702
+   cx: 212.5
+   cy: 200.5
 
 # Extrinsic parameter between IMU and Camera.
 estimate_extrinsic: 0   # 0  Have an accurate extrinsic parameters. We will trust the following imu^R_cam, imu^T_cam, don't change it.
@@ -48,7 +48,7 @@ freq: 15                 # frequence (Hz) of publish tracking result. At least 1
 F_threshold: 1.0        # ransac threshold (pixel)
 show_track: 1           # publish tracking image as topic
 equalize: 0             # if image is too dark or light, trun on equalize to find enough features
-fisheye: 0              # if using fisheye, trun on it. A circle mask will be loaded to remove edge noisy points
+fisheye: 1              # if using fisheye, trun on it. A circle mask will be loaded to remove edge noisy points
 
 #optimization parameters
 max_solver_time: 0.04   # max solver itration time (ms), to guarantee real time
