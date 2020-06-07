@@ -4,6 +4,7 @@
 #include <std_msgs/Header.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/Empty.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/Image.h>
@@ -31,7 +32,10 @@ extern int IMAGE_ROW, IMAGE_COL;
 
 void registerPub(ros::NodeHandle &n);
 
-void pubLatestOdometry(const Eigen::Vector3d &P, const Eigen::Quaterniond &Q, const Eigen::Vector3d &V, const std_msgs::Header &header);
+void comunicateSuccessInit(void);
+
+void pubLatestOdometry(const Eigen::Vector3d &P, const Eigen::Quaterniond &Q, const Eigen::Vector3d &V,
+	               const Eigen::Vector3d &W, const std_msgs::Header &header);
 
 void printStatistics(const Estimator &estimator, double t);
 
